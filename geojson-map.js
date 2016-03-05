@@ -1,8 +1,10 @@
-d3.json('watershed.geojson', function(data) {
-  createMap(data);
-});
+const queue = d3_queue.queue();
 
-function createMap(contours) {
+queue.defer(d3.json, 'watershed.geojson')
+    .defer(d3.json, 'polling_locations.geojson')
+    .await((error, map, points) => createMap(map, points));
+
+function createMap(map, points) {
   const width = 805;
   const height = 562;
 
@@ -13,7 +15,7 @@ function createMap(contours) {
    
   const path = d3.geo.path().projection(projection);
 
-  const bounds = path.bounds(contours);
+  const bounds = path.bounds(map);
 
   // from Mike Bostock's Project to Bounding Box example http://bl.ocks.org/mbostock/4707858 
   const scale = .95 / Math.max((bounds[1][0] - bounds[0][0]) / width, (bounds[1][1] - bounds[0][1]) / height);
@@ -27,9 +29,16 @@ function createMap(contours) {
       .attr('height', height);
 
   svg.selectAll('path')
-      .data(contours.features)
-      .enter().append('path')
+      .data(map.features)
+   .enter().append('path')
       .attr('d', path)
       .style('fill', 'none')
       .style('stroke', '#dedede');
+
+  svg.selectAll('path')
+      .data(points.features)
+    .enter().append('path')
+      .attr('d', path)
+      .style('fill', 'none')
+      .style('stroke', '#98ff98');
 }
